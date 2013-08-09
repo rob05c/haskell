@@ -1,28 +1,14 @@
 import Data.List
-
-factorial :: Integer -> Integer
-factorial 0 = 1
-factorial n = n * factorial (n - 1)
+import Data.Char
+import qualified Data.Map as Map
 
 charName :: Char -> String
 charName 'a' = "Albert"
 charname 'b' = "Bethany"
 charname 'c' = "Charles"
 
-addVectors :: (Double, Double) -> (Double, Double) -> (Double, Double)
-addVectors (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
-
 --xs = [(1, 3), (2, 4), (5, 6)
 --[a + b | (a, b) <- xs]
-
-head' :: [a] -> a
-head' [] = error "head' can't be called on empty list"
-head' (x:_) = x
-
--- as-pattern
-firstLetter :: String -> String
-firstLetter "" = "Empty string - no first letter"
-firstLetter all@(x:xs) = "The first letter of '" ++ all ++ "' is " ++ [x]
 
 -- guard
 bigNumber :: Double -> Bool
@@ -37,17 +23,6 @@ a `myCompare` b
   | a <= b = LT
   | otherwise = GT
 
--- where keyword
-bmiTell :: Double -> Double -> String
-bmiTell weight height
-        | bmi <= skinny = "underweight"
-        | bmi <= normal = "normal"
-        | bmi <= fat = "overweight"
-        | otherwise = "whale"
-        where bmi = weight / height ^ 2
-              skinny = 18.5
-              normal = 25.0
-              fat = 30.0
 -- let
 cylinder :: Double -> Double -> Double
 cylinder r h =   
@@ -116,6 +91,73 @@ and' xs = foldr1 (&&) xs
 sqrtSums :: Int
 sqrtSums = length (takeWhile (<1000) (scanl1 (+) (map sqrt [1..]))) + 1
 
+circumference :: Float -> Float
+circumference r = 2 * pi * r
+
+circumference' :: Double -> Double
+circumference' r = 2 * pi * r
+
+lucky :: Int -> String
+lucky 7 = "GLUCKLIG SIEBEN!!1"
+lucky x = "Not so lucky"
+
+factorial' :: Int -> Int
+factorial' 0 = 1
+factorial' n = n * factorial' (n - 1)
+
+addVectors :: (Double, Double) -> (Double, Double) -> (Double, Double)
+addVectors a b = (fst a + fst b, snd a + snd b)
+
+addVectors' :: (Double, Double) -> (Double, Double) -> (Double, Double)
+addVectors' (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
+
+fst' :: (a, b, c) -> a
+fst' (a, _, _) = a
+
+snd' :: (a, b, c) -> b
+snd' (_, b, _) = b
+
+thd' :: (a, b, c) -> c
+thd' (_, _, c) = c
+
+head' :: [a] -> a
+head' [] = error "head' undefined on empty list"
+head' (x:_) = x
+
+tell :: (Show a) => [a] -> String
+tell [] = "Nichts!"
+tell (x:[]) = "Eins! " ++ show x
+tell (x:y:[]) = "Zwei! " ++ show x ++ " " ++ show y
+tell (x:y:_) = "Viel! " ++ show x ++ " " ++ show y ++ " viele mehr!"
+
+poorAdd :: (Num a) => [a] -> a
+poorAdd (x:y:z:[]) = x + y + z
+
+--as-pattern
+firstLetter :: String -> String
+firstLetter "" = "{empty}"
+firstLetter all@(x:xs) = "First " ++ [x] ++ " in " ++ all
+
+--guards
+bmiTell :: Double -> String
+bmiTell bmi
+  | bmi <= 18.5 = "Underweight!"
+  | bmi <= 25.0 = "Correct weight!"
+  | bmi <= 30.0 = "Overweight!"                                  
+  | otherwise   = "Whale alert!"
+
+isIn :: (Eq a) => [a] -> [a] -> Bool
+needle `isIn` haystack = any (needle `isPrefixOf`) (tails haystack)
+
+-- caesar cipher
+encode :: Int -> String -> String
+encode offset msg = map (\c -> chr $ ord c + offset) msg
+
+decode :: Int -> String -> String
+decode offset msg = encode (negate offset) msg
+
+
+
 -- sqrt $ 3 + 4 + 9
 -- f = negate . (*3) 
 -- f(2) = negate(*3)(2)
@@ -127,15 +169,15 @@ numUniques = length . nub
 
 
 -- @todo return a map via fromList
-createMoveMap :: (Eq a) => [a] -> [(a, Int)]
+createMoveMap :: (Eq a, Ord a) => [a] -> Map.Map a Int
 createMoveMap xs = 
               let indices = zip xs [((length xs) - 1), ((length xs) - 2)..]
-              in fromList $ nubBy (\a b -> fst a == fst b) $ reverse indices
+              in Map.fromList $ nubBy (\a b -> fst a == fst b) $ reverse indices
 
 
 -- boyer-moore
 -- returns whether a contains b
-contains'' :: (Eq a) => [a] -> [a] -> Bool
+contains'' :: (Eq a, Ord a) => [a] -> [a] -> Bool
 contains'' [] [] = False
 contains'' [] x = False
 contains'' x [] = False
@@ -146,12 +188,12 @@ contains'' pattern value =
      in if valueAtPatternLast == patternLast then
            True
         else
-
+          False
 
 
 
 -- @param start is the current position, from which to start matching backwards
-contains' :: (Eq a) => [a] -> [a] -> Int -> Bool
+contains' :: (Eq a, Ord a) => [a] -> [a] -> Int -> Bool
 contains' [] [] _ = False
 contains' [] x _ = False
 contains' x [] _ = False
@@ -162,7 +204,22 @@ contains' pattern value start =
             in if valueAt == patternAt then 
                  True -- @todo implement this; recursively check pattern; return move-ahead int on fail
                else 
-                 contains' pattern value (Data.Map.findWithDefault ((length pattern) - 1) valueAt moveMap) -- tail call ftw
+                 contains' pattern value (Map.findWithDefault ((length pattern) - 1) valueAt moveMap) -- tail call ftw
 
-contains :: (Eq a) => [a] -> [a] ->  Bool
+contains :: (Eq a, Ord a) => [a] -> [a] ->  Bool
 contains pattern value = contains' pattern value ((length pattern) - 1)
+
+data Car = Car { company :: String
+               , model :: String
+               , year :: Int
+               } deriving (Show)
+
+data TrafficLight = Red | Yellow | Green
+
+-- make TrafficLight an instance of Eq
+instance Eq TrafficLight where
+  Red == Red = True
+  Green == Green = True
+  Yellow == Yellow = True
+  _ == _ = False
+
